@@ -7,7 +7,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 
-	"github.com/hypernode/mysql-health-check/internal/config"
+	"github.com/hpowernl/MySQL_check/internal/config"
 )
 
 type MySQL struct {

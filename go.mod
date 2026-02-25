@@ -1,4 +1,4 @@
-module github.com/hypernode/mysql-health-check
+module github.com/hpowernl/MySQL_check
 
 go 1.22.2
 

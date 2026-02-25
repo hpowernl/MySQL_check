@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/hypernode/mysql-health-check/internal/checks"
+	"github.com/hpowernl/MySQL_check/internal/checks"
 )
 
 const (

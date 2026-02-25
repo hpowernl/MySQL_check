@@ -1,7 +1,7 @@
 package checks
 
 import (
-	"github.com/hypernode/mysql-health-check/internal/db"
+	"github.com/hpowernl/MySQL_check/internal/db"
 )
 
 func RunCacheChecks(m *db.MySQL) []Check {

@@ -7,10 +7,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/hypernode/mysql-health-check/internal/checks"
-	"github.com/hypernode/mysql-health-check/internal/config"
-	"github.com/hypernode/mysql-health-check/internal/db"
-	"github.com/hypernode/mysql-health-check/internal/output"
+	"github.com/hpowernl/MySQL_check/internal/checks"
+	"github.com/hpowernl/MySQL_check/internal/config"
+	"github.com/hpowernl/MySQL_check/internal/db"
+	"github.com/hpowernl/MySQL_check/internal/output"
 )
 
 // Version is set at build time via ldflags (e.g. -ldflags "-X main.Version=v1.0.0")
