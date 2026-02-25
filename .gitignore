@@ -1,0 +1,28 @@
+# Binaries
+mysql-health-check-linux-amd64
+mysql-health-check-linux-arm64
+checksums.txt
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Go workspace
+/vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
