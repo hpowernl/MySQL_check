@@ -1,0 +1,161 @@
+name: Build MySQL Health Check
+
+on:
+  push:
+    branches: [ main, master ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Multi-Platform Binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -v ./...
+
+      - name: Set version
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=dev-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build Linux AMD64
+        run: |
+          GOOS=linux GOARCH=amd64 go build \
+            -ldflags="-s -w -X main.Version=${{ steps.version.outputs.version }}" \
+            -o mysql-health-check-linux-amd64 .
+          chmod +x mysql-health-check-linux-amd64
+
+      - name: Build Linux ARM64
+        run: |
+          GOOS=linux GOARCH=arm64 go build \
+            -ldflags="-s -w -X main.Version=${{ steps.version.outputs.version }}" \
+            -o mysql-health-check-linux-arm64 .
+          chmod +x mysql-health-check-linux-arm64
+
+      - name: Install QEMU for ARM64 testing
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static
+
+      - name: Test AMD64 binary
+        run: |
+          ./mysql-health-check-linux-amd64 -version
+          ./mysql-health-check-linux-amd64 2>&1 || true
+          echo "AMD64 binary tested successfully!"
+
+      - name: Test ARM64 binary
+        run: |
+          qemu-aarch64-static -L /usr/aarch64-linux-gnu ./mysql-health-check-linux-arm64 -version
+          qemu-aarch64-static -L /usr/aarch64-linux-gnu ./mysql-health-check-linux-arm64 2>&1 || true
+          echo "ARM64 binary tested successfully!"
+
+      - name: Create checksums
+        run: |
+          sha256sum mysql-health-check-linux-amd64 mysql-health-check-linux-arm64 > checksums.txt
+          cat checksums.txt
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mysql-health-check-binaries
+          path: |
+            mysql-health-check-linux-amd64
+            mysql-health-check-linux-arm64
+            checksums.txt
+          retention-days: 90
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            mysql-health-check-linux-amd64
+            mysql-health-check-linux-arm64
+            checksums.txt
+          draft: false
+          prerelease: false
+          make_latest: true
+          generate_release_notes: true
+          body: |
+            ## MySQL Health Check ${{ github.ref_name }}
+
+            ### 📦 Binaries
+
+            Download the binary for your platform:
+
+            - **Linux x86_64 (AMD64)**: `mysql-health-check-linux-amd64`
+            - **Linux ARM64**: `mysql-health-check-linux-arm64`
+
+            ### 🚀 Installation
+
+            ```bash
+            # Download binary (replace VERSION with the tag, e.g. v1.0.0)
+            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/mysql-health-check-linux-amd64
+
+            # Make executable
+            chmod +x mysql-health-check-linux-amd64
+
+            # Optional: rename to mysql-health-check
+            mv mysql-health-check-linux-amd64 mysql-health-check
+
+            # Verify version
+            ./mysql-health-check -version
+
+            # Run (requires .my.cnf with MySQL credentials)
+            ./mysql-health-check -cnf /path/to/.my.cnf
+            ```
+
+            ### 🔐 Checksums
+
+            Verify the download with `checksums.txt`:
+            ```bash
+            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/checksums.txt
+            sha256sum -c checksums.txt
+            ```
+
+            ### 📝 Documentation
+
+            See the [README](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/README.md) for usage and options.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
