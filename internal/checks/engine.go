@@ -12,8 +12,10 @@ func RunEngineChecks(m *db.MySQL) []Check {
 	results = append(results, checkMyISAMCacheHitRate(m))
 	results = append(results, checkMyISAMKeyWriteRatio(m))
 	results = append(results, checkInnoDBCacheHitRate(m))
+	results = append(results, checkInnoDBBufferPoolWaitFree(m))
 	results = append(results, checkRedoLogCoverage(m))
 	results = append(results, checkInnoDBDirtyPages(m))
+	results = append(results, checkInnoDBPendingIO(m))
 	return results
 }
 
@@ -183,6 +185,63 @@ func checkInnoDBDirtyPages(m *db.MySQL) Check {
 
 	c.Value = fmtPct(v)
 	if v < 75 {
+		c.Level = LevelOK
+	} else {
+		c.Level = LevelWarn
+	}
+	return c
+}
+
+func checkInnoDBBufferPoolWaitFree(m *db.MySQL) Check {
+	c := Check{
+		Name:      "InnoDB Buffer Pool Wait Free",
+		Threshold: "0 = OK, > 0 = WARN",
+		Description: "Times InnoDB stalled waiting for a free buffer pool page.",
+		Detail: "Innodb_buffer_pool_wait_free increments whenever InnoDB needs a clean " +
+			"page but cannot find one immediately, forcing it to flush a dirty page first " +
+			"before continuing. Any value above 0 is hard evidence that the buffer pool is " +
+			"too small for the current workload. Increase innodb_buffer_pool_size to " +
+			"eliminate these stalls.",
+	}
+
+	if _, ok := m.Status["Innodb_buffer_pool_wait_free"]; !ok {
+		c.Value = "N/A"
+		c.Level = LevelSkip
+		return c
+	}
+
+	v := statusFloat(m, "Innodb_buffer_pool_wait_free")
+	c.Value = fmt.Sprintf("%.0f", v)
+	if v == 0 {
+		c.Level = LevelOK
+	} else {
+		c.Level = LevelWarn
+	}
+	return c
+}
+
+func checkInnoDBPendingIO(m *db.MySQL) Check {
+	c := Check{
+		Name:      "InnoDB Pending I/O",
+		Threshold: "writes=0 fsyncs=0 = OK, either > 0 = WARN",
+		Description: "Pending write and fsync operations indicating an I/O backlog.",
+		Detail: "Innodb_data_pending_writes and Innodb_data_pending_fsyncs show how many " +
+			"I/O operations are currently queued. Brief spikes during checkpoint flushes " +
+			"are normal, but structurally elevated values mean InnoDB cannot flush dirty " +
+			"pages fast enough to keep up with write pressure. Increase innodb_io_capacity " +
+			"and innodb_io_capacity_max to allow more aggressive flushing on SSD storage.",
+	}
+
+	if _, ok := m.Status["Innodb_data_pending_writes"]; !ok {
+		c.Value = "N/A"
+		c.Level = LevelSkip
+		return c
+	}
+
+	pendingWrites := statusFloat(m, "Innodb_data_pending_writes")
+	pendingFsyncs := statusFloat(m, "Innodb_data_pending_fsyncs")
+	c.Value = fmt.Sprintf("writes=%.0f fsyncs=%.0f", pendingWrites, pendingFsyncs)
+	if pendingWrites == 0 && pendingFsyncs == 0 {
 		c.Level = LevelOK
 	} else {
 		c.Level = LevelWarn

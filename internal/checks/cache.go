@@ -1,6 +1,9 @@
 package checks
 
 import (
+	"fmt"
+	"strconv"
+
 	"github.com/hpowernl/MySQL_check/internal/db"
 )
 
@@ -10,6 +13,7 @@ func RunCacheChecks(m *db.MySQL) []Check {
 	results = append(results, checkThreadCacheRatio(m))
 	results = append(results, checkTableCacheHitRate(m))
 	results = append(results, checkTableDefCacheHitRate(m))
+	results = append(results, checkTableOpenCacheOverflows(m))
 	results = append(results, checkTableLockingEfficiency(m))
 	return results
 }
@@ -143,6 +147,34 @@ func checkTableDefCacheHitRate(m *db.MySQL) Check {
 
 	c.Value = fmtPct(v)
 	if v > 75 {
+		c.Level = LevelOK
+	} else {
+		c.Level = LevelWarn
+	}
+	return c
+}
+
+func checkTableOpenCacheOverflows(m *db.MySQL) Check {
+	c := Check{
+		Name:      "Table Cache Overflows",
+		Threshold: "0 = OK, > 0 = WARN",
+		Description: "Times a table handle had to be closed because the open table cache was full.",
+		Detail: "Table_open_cache_overflows increments each time MySQL evicts a table " +
+			"handle immediately after use because table_open_cache has no room. Every " +
+			"overflow means an unnecessary close+reopen cycle on the next access, adding " +
+			"latency. A non-zero value is a clear signal to increase table_open_cache.",
+	}
+
+	raw, ok := m.Status["Table_open_cache_overflows"]
+	if !ok {
+		c.Value = "N/A"
+		c.Level = LevelSkip
+		return c
+	}
+
+	v, _ := strconv.ParseFloat(raw, 64)
+	c.Value = fmt.Sprintf("%.0f", v)
+	if v == 0 {
 		c.Level = LevelOK
 	} else {
 		c.Level = LevelWarn

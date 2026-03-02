@@ -10,6 +10,7 @@ import (
 func RunQueryChecks(m *db.MySQL) []Check {
 	var results []Check
 	results = append(results, checkSortMergePassRatio(m))
+	results = append(results, checkSortBufferMemoryRisk(m))
 	results = append(results, checkTempDiskData(m))
 	results = append(results, checkFlushingLogs(m))
 	results = append(results, checkQCacheFragmentation(m))
@@ -42,6 +43,44 @@ func checkSortMergePassRatio(m *db.MySQL) Check {
 
 	c.Value = fmtPct(v)
 	if v < 10 {
+		c.Level = LevelOK
+	} else {
+		c.Level = LevelWarn
+	}
+	return c
+}
+
+func checkSortBufferMemoryRisk(m *db.MySQL) Check {
+	c := Check{
+		Name:      "Sort Buffer Memory Risk",
+		Threshold: "< 25% of RAM = OK, >= 25% WARN",
+		Description: "Worst-case memory if all connections run a sort simultaneously.",
+		Detail: "sort_buffer_size is allocated per thread per sort operation, so at peak " +
+			"concurrency the total usage is sort_buffer_size × max_connections. If that " +
+			"theoretical maximum exceeds 25% of total RAM, a sudden burst of parallel " +
+			"sort-heavy queries can cause memory exhaustion or swapping. Consider reducing " +
+			"sort_buffer_size or max_connections if the risk is high.",
+	}
+
+	sortBuf := varFloat(m, "sort_buffer_size")
+	maxConn := varFloat(m, "max_connections")
+	if sortBuf == 0 || maxConn == 0 {
+		c.Value = "N/A"
+		c.Level = LevelSkip
+		return c
+	}
+
+	totalRAM, _, err := readMeminfo()
+	if err != nil || totalRAM == 0 {
+		c.Value = "N/A"
+		c.Level = LevelSkip
+		return c
+	}
+
+	peakBytes := sortBuf * maxConn
+	ratio := peakBytes * 100.0 / float64(totalRAM)
+	c.Value = fmt.Sprintf("%.1f%% (%.0fMB peak)", ratio, peakBytes/1024/1024)
+	if ratio < 25 {
 		c.Level = LevelOK
 	} else {
 		c.Level = LevelWarn
