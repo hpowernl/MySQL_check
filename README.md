@@ -95,20 +95,24 @@ mysql-health-check [options]
 ### MyISAM / InnoDB
 - **MyISAM Cache Hit Rate** — Key buffer effectiveness (>95% OK, ≤95% WARN)
 - **MyISAM Key Write Ratio** — Physical key block write efficiency (≥90% OK)
-- **InnoDB Cache Hit Rate** — Buffer pool effectiveness (>90% OK, ≤90% WARN)
-- **InnoDB Log File Size** — Redo log coverage in minutes (≥45min OK)
-- **InnoDB Dirty Pages Ratio** — Modified pages not yet flushed (<75% OK, ≥75% WARN)
+- **InnoDB Cache Hit Rate** — Buffer pool hit rate; high physical reads indicate `innodb_buffer_pool_size` is too small (>90% OK, ≤90% WARN)
+- **InnoDB Buffer Pool Wait Free** — Hard evidence of buffer pool pressure; any stall waiting for a free page means the pool is undersized (0 OK, >0 WARN)
+- **InnoDB Log File Size** — Redo log coverage in minutes; too short causes frequent checkpoint flushes (≥45min OK)
+- **InnoDB Dirty Pages Ratio** — Modified pages not yet flushed; high ratio signals flushing cannot keep up (<75% OK, ≥75% WARN)
+- **InnoDB Pending I/O** — Pending write and fsync operations; structurally elevated values indicate `innodb_io_capacity` is too low (0/0 OK, either >0 WARN)
 
 ### Memory
 - **Thread Cache Hit Rate** — Thread reuse efficiency (>50% OK)
 - **Thread Cache Ratio** — Cached vs created threads (>10% OK)
 - **Table Cache Hit Rate** — Table open cache effectiveness (≥90% OK)
-- **Table Def Cache Hit Rate** — Table definition cache (>75% OK)
+- **Table Def Cache Hit Rate** — Table definition cache hit rate (>75% OK)
+- **Table Cache Overflows** — Times a table handle was evicted due to a full cache; any overflow means `table_open_cache` is too small (0 OK, >0 WARN)
 - **Table Locking Efficiency** — Locks acquired without waiting (>95% OK)
 
 ### Queries / Logs
 - **Sort Merge Passes Ratio** — Sort operations spilling to disk (<10% OK)
-- **Temporary Disk Data** — Temp tables on disk (≤25% OK, >25% WARN)
+- **Sort Buffer Memory Risk** — Worst-case peak memory of `sort_buffer_size × max_connections` relative to total RAM; warns before a concurrency spike causes memory exhaustion (<25% OK, ≥25% WARN)
+- **Temporary Disk Data** — Temp tables created on disk (≤25% OK, >25% WARN)
 - **Flushing Logs** — Log buffer flush waits (<5% OK, 5–20% WARN, >20% CRIT)
 - **QCache Fragmentation** — Query cache fragmentation (MySQL <8.0 only)
 - **Query Truncation Status** — Truncated SQL in performance_schema
