@@ -16,8 +16,8 @@ func RunCacheChecks(m *db.MySQL) []Check {
 
 func checkThreadCacheHitRate(m *db.MySQL) Check {
 	c := Check{
-		Name:      "Thread Cache Hit Rate",
-		Threshold: "> 50% OK, <= 50% WARN",
+		Name:        "Thread Cache Hit Rate",
+		Threshold:   "> 50% OK, <= 50% WARN",
 		Description: "The percentage of times a requested thread is found in the cache.",
 		Detail: "When a client connects, MySQL can reuse a cached thread instead of " +
 			"creating a new one. Thread creation is expensive (involves memory allocation " +
@@ -45,8 +45,8 @@ func checkThreadCacheHitRate(m *db.MySQL) Check {
 
 func checkThreadCacheRatio(m *db.MySQL) Check {
 	c := Check{
-		Name:      "Thread Cache Ratio",
-		Threshold: "> 10% OK, <= 10% WARN",
+		Name:        "Thread Cache Ratio",
+		Threshold:   "> 10% OK, <= 10% WARN",
 		Description: "The efficiency of the thread cache for reusing threads.",
 		Detail: "Shows what proportion of all threads ever created are currently sitting " +
 			"in the cache ready for reuse. A ratio below 10% suggests the thread cache is " +
@@ -74,8 +74,8 @@ func checkThreadCacheRatio(m *db.MySQL) Check {
 
 func checkTableCacheHitRate(m *db.MySQL) Check {
 	c := Check{
-		Name:      "Table Cache Hit Rate",
-		Threshold: ">= 90% OK, < 90% WARN",
+		Name:        "Table Cache Hit Rate",
+		Threshold:   ">= 90% OK, < 90% WARN",
 		Description: "Efficiency of the table open cache.",
 		Detail: "Each time MySQL accesses a table, it needs an open file handle. The " +
 			"table cache stores these handles to avoid repeatedly opening and closing " +
@@ -122,8 +122,8 @@ func checkTableCacheHitRate(m *db.MySQL) Check {
 
 func checkTableDefCacheHitRate(m *db.MySQL) Check {
 	c := Check{
-		Name:      "Table Def Cache Hit Rate",
-		Threshold: "> 75% OK, <= 75% WARN",
+		Name:        "Table Def Cache Hit Rate",
+		Threshold:   "> 75% OK, <= 75% WARN",
 		Description: "The efficiency of the table definition cache.",
 		Detail: "Table definitions (schema metadata like column types, indexes) are " +
 			"cached to avoid re-parsing .frm files or data dictionary entries. A hit " +
@@ -152,8 +152,8 @@ func checkTableDefCacheHitRate(m *db.MySQL) Check {
 
 func checkTableLockingEfficiency(m *db.MySQL) Check {
 	c := Check{
-		Name:      "Table Locking Efficiency",
-		Threshold: "> 95% OK, <= 95% WARN",
+		Name:        "Table Locking Efficiency",
+		Threshold:   "> 95% OK, <= 95% WARN",
 		Description: "Percentage of table locks acquired without waiting.",
 		Detail: "Measures how often table lock requests are granted immediately versus " +
 			"having to wait. Low efficiency (< 95%) indicates lock contention, which " +

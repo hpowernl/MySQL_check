@@ -19,8 +19,8 @@ func RunQueryChecks(m *db.MySQL) []Check {
 
 func checkSortMergePassRatio(m *db.MySQL) Check {
 	c := Check{
-		Name:      "Sort Merge Passes Ratio",
-		Threshold: "< 10% OK, >= 10% WARN",
+		Name:        "Sort Merge Passes Ratio",
+		Threshold:   "< 10% OK, >= 10% WARN",
 		Description: "The effectiveness of sorting operations.",
 		Detail: "When MySQL cannot complete a sort in memory, it writes temporary data " +
 			"to disk and performs merge passes. A high ratio means many sorts spill to " +
@@ -51,8 +51,8 @@ func checkSortMergePassRatio(m *db.MySQL) Check {
 
 func checkTempDiskData(m *db.MySQL) Check {
 	c := Check{
-		Name:      "Temporary Disk Data",
-		Threshold: "<= 25% OK, > 25% WARN",
+		Name:        "Temporary Disk Data",
+		Threshold:   "<= 25% OK, > 25% WARN",
 		Description: "The percentage of temporary tables created on disk instead of in memory.",
 		Detail: "MySQL creates temporary tables for complex queries (GROUP BY, DISTINCT, " +
 			"UNION). When these exceed tmp_table_size or max_heap_table_size, they spill " +
@@ -81,8 +81,8 @@ func checkTempDiskData(m *db.MySQL) Check {
 
 func checkFlushingLogs(m *db.MySQL) Check {
 	c := Check{
-		Name:      "Flushing Logs",
-		Threshold: "< 5% OK, 5-20% WARN, > 20% CRIT",
+		Name:        "Flushing Logs",
+		Threshold:   "< 5% OK, 5-20% WARN, > 20% CRIT",
 		Description: "The percentage of log writes that had to wait for the log buffer to be flushed.",
 		Detail: "When InnoDB needs to write to the redo log but the log buffer is full, " +
 			"it must wait for the buffer to be flushed to disk. A high wait percentage " +
@@ -114,8 +114,8 @@ func checkFlushingLogs(m *db.MySQL) Check {
 
 func checkQCacheFragmentation(m *db.MySQL) Check {
 	c := Check{
-		Name:      "QCache Fragmentation",
-		Threshold: "frag < 10% AND del < 20% OK, else WARN",
+		Name:        "QCache Fragmentation",
+		Threshold:   "frag < 10% AND del < 20% OK, else WARN",
 		Description: "Query cache fragmentation and eviction rate.",
 		Detail: "The query cache stores SELECT results for reuse. Fragmentation means " +
 			"free memory is scattered in small blocks, reducing cache efficiency. A high " +
@@ -165,8 +165,8 @@ func checkQCacheFragmentation(m *db.MySQL) Check {
 
 func checkQueryTruncation(m *db.MySQL) Check {
 	c := Check{
-		Name:      "Query Truncation Status",
-		Threshold: "FALSE = OK, TRUE = WARN",
+		Name:        "Query Truncation Status",
+		Threshold:   "FALSE = OK, TRUE = WARN",
 		Description: "The presence of truncated SQL query statements.",
 		Detail: "When SQL query text exceeds the performance_schema max length, it gets " +
 			"truncated with '...'. This prevents full analysis of slow or problematic " +
