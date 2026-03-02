@@ -110,13 +110,13 @@ func checkInnoDBCacheHitRate(m *db.MySQL) Check {
 func checkRedoLogCoverage(m *db.MySQL) Check {
 	c := Check{
 		Name:      "InnoDB Log File Size",
-		Threshold: ">= 45min OK, < 45min WARN (ideal 45-75min)",
+		Threshold: "45–120min OK, < 45min or > 120min WARN (ideal ~60min)",
 		Description: "Minutes of redo log capacity before a flush is required.",
 		Detail: "The InnoDB redo log records all changes to data. This check calculates " +
 			"how many minutes of write activity the redo log can hold before it must be " +
-			"flushed. Ideally this should be around 60 minutes (45-75 range). Too small " +
+			"flushed. Ideally this should be around 60 minutes (45-120 range). Too small " +
 			"means frequent checkpoint flushes causing I/O spikes; too large means longer " +
-			"crash recovery times.",
+			"crash recovery times after an unexpected shutdown.",
 	}
 
 	uptimeStr, ok := m.Status["Uptime"]
@@ -154,7 +154,7 @@ func checkRedoLogCoverage(m *db.MySQL) Check {
 
 	minutes := (uptime / 60.0) * redoCap / osLogWritten
 	c.Value = fmtMin(minutes)
-	if minutes >= 45 {
+	if minutes >= 45 && minutes <= 120 {
 		c.Level = LevelOK
 	} else {
 		c.Level = LevelWarn

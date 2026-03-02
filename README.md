@@ -90,14 +90,14 @@ mysql-health-check [options]
 - **Disk Space Usage** — Data directory filesystem usage (<80% OK, ≥80% WARN)
 - **Memory Utilization** — Server RAM usage (<80% OK, ≥80% WARN)
 - **Connection Utilization** — Peak usage of max_connections (<70% OK, 70–85% WARN, ≥85% CRIT)
-- **Open Files Utilization** — File descriptor usage (<85% OK, ≥85% WARN)
+- **Open Files Utilization** — File descriptor usage (<85% OK, ≥85% WARN; SKIP on MySQL 8.0+ where this counter is not tracked)
 
 ### MyISAM / InnoDB
 - **MyISAM Cache Hit Rate** — Key buffer effectiveness (>95% OK, ≤95% WARN)
 - **MyISAM Key Write Ratio** — Physical key block write efficiency (≥90% OK)
 - **InnoDB Cache Hit Rate** — Buffer pool hit rate; high physical reads indicate `innodb_buffer_pool_size` is too small (>90% OK, ≤90% WARN)
 - **InnoDB Buffer Pool Wait Free** — Hard evidence of buffer pool pressure; any stall waiting for a free page means the pool is undersized (0 OK, >0 WARN)
-- **InnoDB Log File Size** — Redo log coverage in minutes; too short causes frequent checkpoint flushes (≥45min OK)
+- **InnoDB Log File Size** — Redo log coverage in minutes; too short causes checkpoint I/O spikes, too large slows crash recovery (45–120min OK, outside range WARN)
 - **InnoDB Dirty Pages Ratio** — Modified pages not yet flushed; high ratio signals flushing cannot keep up (<75% OK, ≥75% WARN)
 - **InnoDB Pending I/O** — Pending write and fsync operations; structurally elevated values indicate `innodb_io_capacity` is too low (0/0 OK, either >0 WARN)
 

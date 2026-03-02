@@ -197,8 +197,21 @@ func checkOpenFiles(m *db.MySQL) Check {
 			"open_files_limit is high enough for your workload.",
 	}
 
-	openFiles := statusFloat(m, "Open_files")
+	rawOpen, hasOpen := m.Status["Open_files"]
 	limit := varFloat(m, "open_files_limit")
+	if !hasOpen || limit == 0 {
+		c.Value = "N/A"
+		c.Level = LevelSkip
+		return c
+	}
+	openFiles, _ := strconv.ParseFloat(rawOpen, 64)
+	if openFiles == 0 {
+		// MySQL 8.0+ no longer tracks Open_files via this counter;
+		// reporting 0 would show a meaningless 0.00% rather than skip.
+		c.Value = "N/A"
+		c.Level = LevelSkip
+		return c
+	}
 	v, ok := pct(openFiles, limit)
 	if !ok {
 		c.Value = "N/A"
